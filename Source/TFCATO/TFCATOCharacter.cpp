@@ -10,6 +10,7 @@
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
 #include "Engine/LocalPlayer.h"
+#include "Views/ObjectActor.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -73,13 +74,14 @@ void ATFCATOCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCom
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ATFCATOCharacter::Look);
+
+		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &ATFCATOCharacter::HandleInteract);
 	}
 	else
 	{
 		UE_LOG(LogTemplateCharacter, Error, TEXT("'%s' Failed to find an Enhanced Input Component! This template is built to use the Enhanced Input system. If you intend to use the legacy system, then you will need to update this C++ file."), *GetNameSafe(this));
 	}
 }
-
 
 void ATFCATOCharacter::Move(const FInputActionValue& Value)
 {
@@ -115,4 +117,31 @@ void ATFCATOCharacter::SetHasRifle(bool bNewHasRifle)
 bool ATFCATOCharacter::GetHasRifle()
 {
 	return bHasRifle;
+}
+
+void ATFCATOCharacter::HandleInteract(const FInputActionValue& Value)
+{
+	FHitResult Hit;
+	FVector Start = FirstPersonCameraComponent->GetComponentLocation();
+	FVector End = Start + FirstPersonCameraComponent->GetForwardVector() * 300.0f;
+
+	FCollisionQueryParams Params;
+	Params.AddIgnoredActor(this);
+
+	bool bHit = GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params);
+	if (!bHit)
+	{
+		DrawDebugLine(GetWorld(), Start, End, FColor::Red, false, 1.0f, 0, 1.0f);
+		return;
+	}
+
+	AObjectActor* HitActor = Cast<AObjectActor>(Hit.GetActor());
+	if (HitActor == nullptr)
+	{
+		DrawDebugLine(GetWorld(), Start, End, FColor::Yellow, false, 1.0f, 0, 1.0f);
+		return;
+	}
+
+	HitActor->SetIsActive(!HitActor->GetIsActive());
+	DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1.0f, 0, 1.0f);
 }
