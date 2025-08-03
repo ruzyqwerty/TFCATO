@@ -21,8 +21,19 @@ void ATFCATOGameMode::BeginPlay()
 		return;
 	}
 
-	const FString FilePath = FPaths::ProjectSavedDir() + "Data/ObjectStates.json";
-	if (!ObjectModel->LoadFromJSON(FilePath))
+	const FString SavedPath = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("Data/ObjectStates.json"));
+	const FString DefaultPath = FPaths::Combine(FPaths::ProjectContentDir(), TEXT("Data/InitialData.json"));
+
+	if (!FPaths::FileExists(SavedPath))
+	{
+		if (!FPlatformFileManager::Get().GetPlatformFile().CopyFile(*SavedPath, *DefaultPath))
+		{
+			UE_LOG(LogTemp, Error, TEXT("Failed to copy default JSON to Saved folder"));
+			return;
+		}
+	}
+
+	if (!ObjectModel->LoadFromJSON(SavedPath))
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to load JSON data"));
 		return;
@@ -53,7 +64,7 @@ void ATFCATOGameMode::BeginPlay()
 
 void ATFCATOGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	const FString FilePath = FPaths::ProjectSavedDir() + "Data/ObjectStates.json";
+	const FString FilePath = FPaths::Combine(FPaths::ProjectSavedDir(), TEXT("Data/ObjectStates.json"));
 	ObjectModel->SaveToJson(FilePath);
 	
 	Super::EndPlay(EndPlayReason);

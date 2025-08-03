@@ -17,14 +17,17 @@ public:
 
 	void InitializeFromData(const FObjectData& InData);
 
-	bool GetIsActive() const { return ObjectData.bIsActive; }
-	void SetIsActive(bool bIsActive);
-
 	const FObjectData& GetObjectData() const { return ObjectData; }
 
 protected:
 	UPROPERTY(VisibleAnywhere)
 	UStaticMeshComponent* MeshComponent = nullptr;
+
+private:
+	UFUNCTION()
+	void OnModelUpdated(const FObjectData& NewData);
+
+	void UpdateColor() const;
 
 private:
 

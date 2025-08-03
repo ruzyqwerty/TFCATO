@@ -1,7 +1,6 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "TFCATOCharacter.h"
-#include "TFCATOProjectile.h"
 #include "Animation/AnimInstance.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
@@ -9,46 +8,42 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "TFCATOGameMode.h"
+#include "Blueprint/UserWidget.h"
 #include "Engine/LocalPlayer.h"
+#include "Models/ObjectModel.h"
 #include "Views/ObjectActor.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
-//////////////////////////////////////////////////////////////////////////
-// ATFCATOCharacter
-
 ATFCATOCharacter::ATFCATOCharacter()
 {
-	// Character doesnt have a rifle at start
-	bHasRifle = false;
-	
-	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
-		
-	// Create a CameraComponent	
+
 	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("FirstPersonCamera"));
 	FirstPersonCameraComponent->SetupAttachment(GetCapsuleComponent());
-	FirstPersonCameraComponent->SetRelativeLocation(FVector(-10.f, 0.f, 60.f)); // Position the camera
+	FirstPersonCameraComponent->SetRelativeLocation(FVector(-10.f, 0.f, 60.f));
 	FirstPersonCameraComponent->bUsePawnControlRotation = true;
 
-	// Create a mesh component that will be used when being viewed from a '1st person' view (when controlling this pawn)
 	Mesh1P = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("CharacterMesh1P"));
 	Mesh1P->SetOnlyOwnerSee(true);
 	Mesh1P->SetupAttachment(FirstPersonCameraComponent);
 	Mesh1P->bCastDynamicShadow = false;
 	Mesh1P->CastShadow = false;
-	//Mesh1P->SetRelativeRotation(FRotator(0.9f, -19.19f, 5.2f));
 	Mesh1P->SetRelativeLocation(FVector(-30.f, 0.f, -150.f));
-
 }
 
 void ATFCATOCharacter::BeginPlay()
 {
-	// Call the base class  
 	Super::BeginPlay();
 
-	// Add Input Mapping Context
-	if (APlayerController* PlayerController = Cast<APlayerController>(Controller))
+	if (HUDWidgetClass.LoadSynchronous() == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("HUDWidgetClass is invalid, check %s"), *GetName());
+		return;
+	}
+
+	if (const APlayerController* PlayerController = Cast<APlayerController>(Controller))
 	{
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
 		{
@@ -56,26 +51,30 @@ void ATFCATOCharacter::BeginPlay()
 		}
 	}
 
-}
+	UUserWidget* HUD = CreateWidget<UUserWidget>(GetWorld(), HUDWidgetClass.LoadSynchronous());
+	if (HUD == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Can't create HUD with class - %s"), *HUDWidgetClass->GetName());
+		return;
+	}
 
-//////////////////////////////////////////////////////////////////////////// Input
+	HUD->AddToViewport();
+}
 
 void ATFCATOCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
-	// Set up action bindings
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
-		// Jumping
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Started, this, &ACharacter::Jump);
 		EnhancedInputComponent->BindAction(JumpAction, ETriggerEvent::Completed, this, &ACharacter::StopJumping);
 
-		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ATFCATOCharacter::Move);
 
-		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ATFCATOCharacter::Look);
 
 		EnhancedInputComponent->BindAction(InteractAction, ETriggerEvent::Triggered, this, &ATFCATOCharacter::HandleInteract);
+
+		EnhancedInputComponent->BindAction(TabAction, ETriggerEvent::Triggered, this, &ATFCATOCharacter::ToggleUI);
 	}
 	else
 	{
@@ -109,16 +108,6 @@ void ATFCATOCharacter::Look(const FInputActionValue& Value)
 	}
 }
 
-void ATFCATOCharacter::SetHasRifle(bool bNewHasRifle)
-{
-	bHasRifle = bNewHasRifle;
-}
-
-bool ATFCATOCharacter::GetHasRifle()
-{
-	return bHasRifle;
-}
-
 void ATFCATOCharacter::HandleInteract(const FInputActionValue& Value)
 {
 	FHitResult Hit;
@@ -142,6 +131,33 @@ void ATFCATOCharacter::HandleInteract(const FInputActionValue& Value)
 		return;
 	}
 
-	HitActor->SetIsActive(!HitActor->GetIsActive());
+	const ATFCATOGameMode* GameMode = Cast<ATFCATOGameMode>(GetWorld()->GetAuthGameMode());
+	UObjectModel* ObjectModel = GameMode->GetObjectModel();
+	ObjectModel->ToggleActiveById(HitActor->GetObjectData().Id);
+
 	DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1.0f, 0, 1.0f);
+}
+
+void ATFCATOCharacter::ToggleUI(const FInputActionValue& Value)
+{
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	if (PlayerController == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to toggle UI"));
+		return;
+	}
+
+	if (PlayerController->ShouldShowMouseCursor())
+	{
+		PlayerController->SetShowMouseCursor(false);
+		PlayerController->SetInputMode(FInputModeGameOnly());
+	}
+	else
+	{
+		PlayerController->SetShowMouseCursor(true);
+
+		FInputModeGameAndUI InputMode;
+		InputMode.SetHideCursorDuringCapture(false);
+		PlayerController->SetInputMode(InputMode);
+	}
 }

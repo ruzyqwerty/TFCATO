@@ -1,8 +1,8 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "ObjectActor.h"
-
 #include "TFCATO/TFCATOGameMode.h"
+#include "TFCATO/Models/ObjectModel.h"
 
 AObjectActor::AObjectActor()
 {
@@ -23,6 +23,15 @@ void AObjectActor::InitializeFromData(const FObjectData& InData)
 	}
 
 	const ATFCATOGameMode* GameMode = Cast<ATFCATOGameMode>(GetWorld()->GetAuthGameMode());
+	UObjectModel* ObjectModel = GameMode->GetObjectModel();
+	if (ObjectModel == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Can't get object model from %s"), *GameMode->GetName());
+		return;
+	}
+
+	ObjectModel->OnObjectUpdated.AddDynamic(this, &AObjectActor::OnModelUpdated);
+
 	UStaticMesh* MeshByName = GameMode->GetMeshByName(ObjectData.Name.ToString());
 	if (MeshByName == nullptr)
 	{
@@ -39,15 +48,24 @@ void AObjectActor::InitializeFromData(const FObjectData& InData)
 		return;
 	}
 
-	SetIsActive(ObjectData.bIsActive);
+	UpdateColor();
 }
 
-void AObjectActor::SetIsActive(const bool bIsActive)
+void AObjectActor::OnModelUpdated(const FObjectData& NewData)
 {
-	ObjectData.bIsActive = bIsActive;
+	if (NewData.Id != ObjectData.Id)
+	{
+		return;
+	}
 
+	ObjectData = NewData;
+	UpdateColor();
+}
+
+void AObjectActor::UpdateColor() const
+{
 	FLinearColor ColorValue;
-	if (bIsActive)
+	if (ObjectData.bIsActive)
 	{
 		const FString ColorName = ObjectData.Color.ToLower();
 		if (ColorName == "red")

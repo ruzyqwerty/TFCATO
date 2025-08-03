@@ -1,10 +1,24 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "ObjectModel.h"
-
 #include "EngineUtils.h"
 #include "ObjectData.h"
 #include "TFCATO/Views/ObjectActor.h"
+
+void UObjectModel::ToggleActiveById(const int32 Id)
+{
+	for (FObjectData& Data : ObjectDataList)
+	{
+		if (Data.Id != Id)
+		{
+			continue;
+		}
+
+		Data.bIsActive = !Data.bIsActive;
+		OnObjectUpdated.Broadcast(Data);
+		break;
+	}
+}
 
 bool UObjectModel::LoadFromJSON(const FString& FilePath)
 {

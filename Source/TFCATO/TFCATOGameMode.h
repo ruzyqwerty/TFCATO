@@ -23,6 +23,9 @@ public:
 
 	UStaticMesh* GetMeshByName(const FString& Name) const;
 
+	UFUNCTION(BlueprintPure)
+	UObjectModel* GetObjectModel() const { return ObjectModel; }
+
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "Settings")
 	TMap<FString, TSoftObjectPtr<UStaticMesh>> ObjectMeshMap;
