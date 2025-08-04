@@ -7,6 +7,8 @@
 #include "TFCATO/Models/ObjectData.h"
 #include "ObjectActor.generated.h"
 
+DECLARE_LOG_CATEGORY_EXTERN(LogObjectActor, Log, All);
+
 UCLASS()
 class TFCATO_API AObjectActor : public AActor
 {
@@ -20,7 +22,7 @@ public:
 	const FObjectData& GetObjectData() const { return ObjectData; }
 
 protected:
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
 	UStaticMeshComponent* MeshComponent = nullptr;
 
 private:

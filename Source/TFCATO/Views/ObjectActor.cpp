@@ -1,8 +1,10 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "ObjectActor.h"
-#include "TFCATO/TFCATOGameMode.h"
+#include "TFCATO/Controllers/TFCATOGameMode.h"
 #include "TFCATO/Models/ObjectModel.h"
+
+DEFINE_LOG_CATEGORY(LogObjectActor);
 
 AObjectActor::AObjectActor()
 {
@@ -15,10 +17,9 @@ AObjectActor::AObjectActor()
 void AObjectActor::InitializeFromData(const FObjectData& InData)
 {
 	ObjectData = InData;
-
 	if (MeshComponent == nullptr)
 	{
-		UE_LOG(LogTemp, Error, TEXT("MeshComponent is invalid in %s"), *GetName());
+		UE_LOG(LogObjectActor, Error, TEXT("%hs :: MeshComponent is invalid in %s"), __FUNCTION__, *GetName());
 		return;
 	}
 
@@ -26,7 +27,7 @@ void AObjectActor::InitializeFromData(const FObjectData& InData)
 	UObjectModel* ObjectModel = GameMode->GetObjectModel();
 	if (ObjectModel == nullptr)
 	{
-		UE_LOG(LogTemp, Error, TEXT("Can't get object model from %s"), *GameMode->GetName());
+		UE_LOG(LogObjectActor, Error, TEXT("%hs :: Can't get object model from %s"), __FUNCTION__, *GameMode->GetName());
 		return;
 	}
 
@@ -35,7 +36,7 @@ void AObjectActor::InitializeFromData(const FObjectData& InData)
 	UStaticMesh* MeshByName = GameMode->GetMeshByName(ObjectData.Name.ToString());
 	if (MeshByName == nullptr)
 	{
-		UE_LOG(LogTemp, Error, TEXT("No mesh found for %s"), *ObjectData.Name.ToString());
+		UE_LOG(LogObjectActor, Error, TEXT("%hs :: No mesh found for %s"), __FUNCTION__, *ObjectData.Name.ToString());
 		return;
 	}
 
@@ -44,7 +45,7 @@ void AObjectActor::InitializeFromData(const FObjectData& InData)
 	DynamicMaterial = MeshComponent->CreateAndSetMaterialInstanceDynamic(0);
 	if (!DynamicMaterial.IsValid())
 	{
-		UE_LOG(LogTemp, Error, TEXT("Can't create dynamic material for %s in %s"), *MeshComponent->GetName(), *GetName());
+		UE_LOG(LogObjectActor, Error, TEXT("%hs :: Can't create dynamic material for %s in %s"), __FUNCTION__, *MeshComponent->GetName(), *GetName());
 		return;
 	}
 

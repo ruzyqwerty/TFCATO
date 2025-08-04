@@ -5,6 +5,8 @@
 #include "ObjectData.h"
 #include "TFCATO/Views/ObjectActor.h"
 
+DEFINE_LOG_CATEGORY(LogObjectModel);
+
 void UObjectModel::ToggleActiveById(const int32 Id)
 {
 	for (FObjectData& Data : ObjectDataList)
@@ -25,7 +27,7 @@ bool UObjectModel::LoadFromJSON(const FString& FilePath)
 	FString JsonString;
 	if (!FFileHelper::LoadFileToString(JsonString, *FilePath))
 	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to load JSON file: %s"), *FilePath);
+		UE_LOG(LogObjectModel, Error, TEXT("%hs :: Failed to load JSON file: %s"), __FUNCTION__, *FilePath);
 		return false;
 	}
 
@@ -33,19 +35,18 @@ bool UObjectModel::LoadFromJSON(const FString& FilePath)
 	TSharedRef<TJsonReader<>> Reader = TJsonReaderFactory<>::Create(JsonString);
 	if (!FJsonSerializer::Deserialize(Reader, JsonObject) && JsonObject.IsValid())
 	{
-		UE_LOG(LogTemp, Error, TEXT("Invalid JSON format"));
+		UE_LOG(LogObjectModel, Error, TEXT("%hs :: Can't deserialize file %s "), __FUNCTION__, *FilePath);
 		return false;
 	}
 
 	const TArray<TSharedPtr<FJsonValue>>* ObjectsArray;
 	if (!JsonObject->TryGetArrayField(TEXT("objects"), ObjectsArray))
 	{
-		UE_LOG(LogTemp, Error, TEXT("Invalid JSON format: Can't find 'objects' field"));
+		UE_LOG(LogObjectModel, Error, TEXT("%hs :: Invalid JSON format: Can't find 'objects' field in %s"), __FUNCTION__, *FilePath);
 		return false;
 	}
 
 	ObjectDataList.Empty();
-
 	for (const TSharedPtr<FJsonValue>& Value : *ObjectsArray)
 	{
 		const TSharedPtr<FJsonObject>* ObjectFields;
@@ -86,11 +87,8 @@ bool UObjectModel::LoadFromJSON(const FString& FilePath)
 void UObjectModel::SaveToJson(const FString& FilePath) const
 {
 	TArray<TSharedPtr<FJsonValue>> ObjectArray;
-
-	for (TActorIterator<AObjectActor> It(GetWorld()); It; ++It)
+	for (const FObjectData& Data : ObjectDataList)
 	{
-		const FObjectData& Data = It->GetObjectData();
-
 		TSharedPtr<FJsonObject> JsonObject = MakeShared<FJsonObject>();
 		JsonObject->SetNumberField("id", Data.Id);
 		JsonObject->SetStringField("name", Data.Name.ToString());
@@ -115,10 +113,10 @@ void UObjectModel::SaveToJson(const FString& FilePath) const
 
 	if (FFileHelper::SaveStringToFile(OutputString, *FilePath))
 	{
-		UE_LOG(LogTemp, Log, TEXT("Saved JSON to: %s"), *FilePath);
+		UE_LOG(LogObjectModel, Log, TEXT("%hs :: Saved JSON to: %s"), __FUNCTION__, *FilePath);
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to save JSON to: %s"), *FilePath);
+		UE_LOG(LogObjectModel, Error, TEXT("%hs :: Failed to save JSON to: %s"), __FUNCTION__, *FilePath);
 	}
 }

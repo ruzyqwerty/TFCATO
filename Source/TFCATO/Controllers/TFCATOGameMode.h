@@ -8,6 +8,8 @@
 
 class UObjectModel;
 
+DECLARE_LOG_CATEGORY_EXTERN(LogTFCATOGameMode, Log, All);
+
 UCLASS(minimalapi)
 class ATFCATOGameMode : public AGameModeBase
 {
@@ -24,14 +26,12 @@ public:
 	UStaticMesh* GetMeshByName(const FString& Name) const;
 
 	UFUNCTION(BlueprintPure)
-	UObjectModel* GetObjectModel() const { return ObjectModel; }
+	UObjectModel* GetObjectModel() const { return ObjectModel.Get(); }
 
 protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category= "Settings")
 	TMap<FString, TSoftObjectPtr<UStaticMesh>> ObjectMeshMap;
 
 private:
-
-	UPROPERTY()
-	UObjectModel* ObjectModel = nullptr;
+	TWeakObjectPtr<UObjectModel> ObjectModel = nullptr;
 };

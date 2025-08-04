@@ -8,6 +8,8 @@
 
 struct FObjectData;
 
+DECLARE_LOG_CATEGORY_EXTERN(LogObjectModel, Log, All);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnObjectUpdated, const FObjectData&, NewObjectState);
 
 /**
@@ -26,18 +28,15 @@ public:
 	UFUNCTION(BlueprintCallable)
 	void ToggleActiveById(int32 Id);
 
-	/** Загружает данные из JSON-файла */
-	UFUNCTION(BlueprintCallable, Category = "Data")
+	/** Загружает данные из JSON-файла в ObjectDataList*/
 	bool LoadFromJSON(const FString& FilePath);
 
-	/** Сохраняет данные в JSON-файл */
+	/** Сохраняет данные из ObjectDataList в JSON-файл */
 	void SaveToJson(const FString& FilePath) const;
 
 public:
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FOnObjectUpdated OnObjectUpdated;
 
-	/** Хранит данные, загруженные из JSON */
-	UPROPERTY()
 	TArray<FObjectData> ObjectDataList;
 };
