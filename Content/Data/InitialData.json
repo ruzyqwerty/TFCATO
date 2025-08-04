@@ -5,28 +5,28 @@
 			"name": "Box1",
 			"color": "red",
 			"isActive": true,
-			"position": [ 1200, 750, 150 ]
+			"position": [ 500, 0, 150 ]
 		},
 		{
 			"id": 2,
 			"name": "Sphere1",
-			"color": "green",
+			"color": "red",
 			"isActive": true,
-			"position": [ 1230, 1030, 150 ]
+			"position": [ -500, 0, 150 ]
 		},
 		{
 			"id": 3,
-			"name": "Box1",
+			"name": "Box2",
 			"color": "blue",
 			"isActive": true,
-			"position": [ 1550, 840, 150 ]
+			"position": [ 0, 500, 150 ]
 		},
 		{
 			"id": 4,
-			"name": "Sphere1",
+			"name": "Sphere2",
 			"color": "green",
 			"isActive": true,
-			"position": [ 130, 1540, 150 ]
+			"position": [ 0, -500, 150 ]
 		}
 	]
 }
